@@ -14,6 +14,9 @@ This model is part of the Neuroblox computational neuroscience platform [(https:
 
 ## Repository structure
 
+- `GUI/`  
+  Code for a web application that runs the model. A live version can be accessed here: https://nt-cycling.fly.dev/.
+
 - `reproduce_paper/`  
   Code to reproduce the results reported in the corresponding publication.  
 
