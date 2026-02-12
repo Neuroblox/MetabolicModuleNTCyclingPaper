@@ -1,0 +1,13 @@
+name = "NTCycling"
+uuid = "f7ca82c8-24e7-49f1-a86e-098a698d17a7"
+version = "0.1.0"
+authors = ["Helmut Strey <Helmut.Strey@stonybrook.edu>"]
+
+[deps]
+Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+Oxygen = "df9a0d86-3283-4920-82dc-4555fc0d1d8b"
+XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"

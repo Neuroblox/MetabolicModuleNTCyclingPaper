@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neurotransmitter Cycling Model</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="/images/Neuroblox-Light.png" alt="Neuroblox" style="height: 40px;">
+                        <span class="fs-5">Metabolic Module</span>
+                    </div>
+                    <h1 class="mb-0 position-absolute start-50 translate-middle-x">Neurotransmitter Cycling Model</h1>
+                    <a href="/documentation" target="_blank" class="btn btn-outline-light btn-sm">Documentation</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Subheader with examples and condition names -->
+        <div class="bg-white border-bottom py-2">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <span class="text-muted me-2">Test your hypotheses:</span>
+                        <button class="btn btn-primary btn-sm btn-example" @click="loadExample('ketosis')">Ketosis</button>
+                        <button class="btn btn-primary btn-sm btn-example" @click="loadExample('gabat')">GABA-T Inhibitor</button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="container-fluid py-3">
+            <div class="row">
+                <!-- Left Column: Parameters & Initial Conditions -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header p-0">
+                            <ul class="nav nav-tabs">
+                                <li class="nav-item">
+                                    <a class="nav-link" :class="{ active: leftTab === 'parameters' }"
+                                       href="#" @click.prevent="leftTab = 'parameters'">PARAMETERS</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" :class="{ active: leftTab === 'states' }"
+                                       href="#" @click.prevent="leftTab = 'states'">INITIAL CONDITIONS</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <!-- Condition names -->
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="text-muted small">Name of Condition 1:</span>
+                                <input type="text" class="form-control form-control-sm" style="width: 100px;"
+                                       v-model="conditionNames.condition1">
+                                <span class="text-muted small">2:</span>
+                                <input type="text" class="form-control form-control-sm" style="width: 100px;"
+                                       v-model="conditionNames.condition2">
+                            </div>
+                            <hr class="my-2">
+
+                            <!-- Condition toggle -->
+                            <div class="condition-toggle mb-3">
+                                <span :class="{ 'fw-bold': !isCondition2 }">{{ conditionNames.condition1 }}</span>
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox"
+                                           v-model="isCondition2" @change="onConditionToggle">
+                                </div>
+                                <span :class="{ 'fw-bold': isCondition2 }">{{ conditionNames.condition2 }}</span>
+                            </div>
+
+                            <!-- Parameters Tab -->
+                            <div v-show="leftTab === 'parameters'">
+                                <p class="text-muted small">Modify parameters for the selected condition.</p>
+
+                                <!-- Parameter selector -->
+                                <div class="row mb-3">
+                                    <div class="col-8">
+                                        <label class="form-label small">Select Parameter</label>
+                                        <select class="form-select form-select-sm" v-model="selectedParameter">
+                                            <option v-for="param in parameterList" :key="param" :value="param">
+                                                {{ param }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Value</label>
+                                        <input type="number" class="form-control form-control-sm"
+                                               v-model.number="currentParameterValue"
+                                               @change="updateParameter" step="any">
+                                    </div>
+                                </div>
+
+                                <!-- Search -->
+                                <div class="mb-2">
+                                    <input type="text" class="form-control form-control-sm table-search"
+                                           placeholder="Search..." v-model="parameterSearch">
+                                </div>
+
+                                <!-- Parameters table -->
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-sm table-hover">
+                                        <thead class="sticky-top">
+                                            <tr>
+                                                <th>Parameter</th>
+                                                <th>{{ conditionNames.condition1 }}</th>
+                                                <th>{{ conditionNames.condition2 }}</th>
+                                                <th>Unit</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="param in filteredParameters" :key="param"
+                                                :class="{ 'table-active': selectedParameter === param }"
+                                                @click="selectParameter(param)" style="cursor: pointer;">
+                                                <td>{{ param }}</td>
+                                                <td>{{ formatNumber(condition1.parameters[param]) }}</td>
+                                                <td>{{ formatNumber(condition2.parameters[param]) }}</td>
+                                                <td>{{ defaults.parameterUnits?.[param] || '' }}</td>
+                                                <td class="small">{{ defaults.parameterDescriptions?.[param] || '' }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Initial Conditions Tab -->
+                            <div v-show="leftTab === 'states'">
+                                <p class="text-muted small">Modify initial conditions for the selected condition.</p>
+
+                                <!-- State selector -->
+                                <div class="row mb-3">
+                                    <div class="col-8">
+                                        <label class="form-label small">Select State</label>
+                                        <select class="form-select form-select-sm" v-model="selectedState">
+                                            <option v-for="state in stateList" :key="state" :value="state">
+                                                {{ state }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small">Value</label>
+                                        <input type="number" class="form-control form-control-sm"
+                                               v-model.number="currentStateValue"
+                                               @change="updateState" step="any">
+                                    </div>
+                                </div>
+
+                                <!-- States table -->
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-sm table-hover">
+                                        <thead class="sticky-top">
+                                            <tr>
+                                                <th>State</th>
+                                                <th>{{ conditionNames.condition1 }}</th>
+                                                <th>{{ conditionNames.condition2 }}</th>
+                                                <th>Unit</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="state in stateList" :key="state"
+                                                :class="{ 'table-active': selectedState === state }"
+                                                @click="selectState(state)" style="cursor: pointer;">
+                                                <td>{{ state }}</td>
+                                                <td>{{ formatNumber(condition1.states[state]) }}</td>
+                                                <td>{{ formatNumber(condition2.states[state]) }}</td>
+                                                <td>{{ defaults.stateUnits?.[state] || '' }}</td>
+                                                <td class="small">{{ defaults.stateDescriptions?.[state] || '' }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Action buttons -->
+                            <div class="btn-group-actions mt-3">
+                                <button class="btn btn-outline-secondary btn-sm" @click="resetSettings">
+                                    Reset Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Dynamics & End-points -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header p-0 d-flex justify-content-between align-items-center">
+                            <ul class="nav nav-tabs">
+                                <li class="nav-item">
+                                    <a class="nav-link" :class="{ active: rightTab === 'dynamics' }"
+                                       href="#" @click.prevent="rightTab = 'dynamics'">DYNAMICS</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" :class="{ active: rightTab === 'endpoints' }"
+                                       href="#" @click.prevent="rightTab = 'endpoints'">END-POINTS</a>
+                                </li>
+                            </ul>
+                            <button class="btn btn-success btn-sm me-2" @click="downloadResults">
+                                Download Results
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Simulation controls -->
+                            <div class="row mb-3 align-items-end">
+                                <div class="col-auto">
+                                    <label class="form-label small">Simulation Length (min)</label>
+                                    <input type="number" class="form-control form-control-sm"
+                                           v-model.number="simLength" @change="runSimulation"
+                                           min="1" max="10000" style="width: 100px;">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label small">Select States</label>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <span v-for="state in stateList" :key="state"
+                                              class="state-chip"
+                                              :class="{ selected: selectedStates.includes(state) }"
+                                              @click="toggleState(state)" style="cursor: pointer;">
+                                            {{ state }}
+                                            <span v-if="selectedStates.includes(state)" class="remove-btn">&times;</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               v-model="percentageChange" @change="runSimulation">
+                                        <label class="form-check-label small">Percentage Change</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dynamics Tab -->
+                            <div v-show="rightTab === 'dynamics'" class="position-relative">
+                                <div v-if="isLoading" class="loading-overlay">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+
+                                <!-- Condition 1 Plot -->
+                                <div class="mb-2">
+                                    <h6 class="text-center text-muted">{{ conditionNames.condition1 }}</h6>
+                                    <div id="plot1" class="plot-container"></div>
+                                </div>
+
+                                <!-- Condition 2 Plot -->
+                                <div>
+                                    <h6 class="text-center text-muted">{{ conditionNames.condition2 }}</h6>
+                                    <div id="plot2" class="plot-container"></div>
+                                </div>
+                            </div>
+
+                            <!-- End-points Tab -->
+                            <div v-show="rightTab === 'endpoints'" class="position-relative">
+                                <div v-if="isLoading" class="loading-overlay">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                                <div id="barPlot" class="plot-container-bar"></div>
+                            </div>
+
+                            <!-- Reference data section -->
+                            <div class="mt-3 border-top pt-3">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" v-model="showReferenceData">
+                                    <label class="form-check-label small">Show Reference Datapoints</label>
+                                </div>
+
+                                <div v-if="showReferenceData">
+                                    <p class="small text-muted mb-2">
+                                        {{ percentageChange ? 'Percentage Change [%]' : 'Concentration [mM]' }} mode
+                                    </p>
+                                    <table class="table table-sm reference-table">
+                                        <thead>
+                                            <tr>
+                                                <th>State</th>
+                                                <th>Mean {{ percentageChange ? '[%]' : '[mM]' }}</th>
+                                                <th>Error {{ percentageChange ? '[%]' : '[mM]' }}</th>
+                                                <th>Time [min]</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(ref, index) in activeReferenceData" :key="index">
+                                                <td>
+                                                    <select class="form-select form-select-sm" v-model="ref.state">
+                                                        <option value="">--</option>
+                                                        <option v-for="s in stateList" :key="s" :value="s">{{ s }}</option>
+                                                    </select>
+                                                </td>
+                                                <td><input type="number" v-model.number="ref.mean" step="any"></td>
+                                                <td><input type="number" v-model.number="ref.error" step="any"></td>
+                                                <td><input type="number" v-model.number="ref.time" step="any"></td>
+                                                <td>
+                                                    <button class="btn btn-outline-danger btn-sm" @click="removeReference(index)">
+                                                        &times;
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <button class="btn btn-outline-primary btn-sm" @click="addReference">
+                                        + Add Reference Point
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-muted py-3">
+            <small>Neurotransmitter Cycling Model | Powered by <a href="https://neuroblox.ai" target="_blank">Neuroblox.ai</a></small>
+        </footer>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, computed, watch, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                // State
+                const defaults = ref({});
+                // Load conditions from localStorage or use empty defaults
+                const savedCondition1 = JSON.parse(localStorage.getItem('condition1') || 'null');
+                const savedCondition2 = JSON.parse(localStorage.getItem('condition2') || 'null');
+                const condition1 = reactive(savedCondition1 || { parameters: {}, states: {} });
+                const condition2 = reactive(savedCondition2 || { parameters: {}, states: {} });
+                // Load condition names from localStorage or use defaults
+                const savedNames = JSON.parse(localStorage.getItem('conditionNames') || 'null');
+                const conditionNames = reactive(savedNames || { condition1: 'Condition 1', condition2: 'Condition 2' });
+
+                const isCondition2 = ref(false);
+                const leftTab = ref('parameters');
+                const rightTab = ref('dynamics');
+
+                const selectedParameter = ref('');
+                const selectedState = ref('');
+                const parameterSearch = ref('');
+
+                const simLength = ref(600);
+                const selectedStates = ref(['GLU_e', 'GABA_i', 'GLN_a']);
+                const percentageChange = ref(false);
+
+                const isLoading = ref(false);
+                const results = reactive({ condition1: null, condition2: null });
+
+                const showReferenceData = ref(false);
+                const referenceDataPercent = ref([]);
+                const referenceDataConc = ref([]);
+
+                // Computed property to get the active reference data based on mode
+                const activeReferenceData = computed(() => {
+                    return percentageChange.value ? referenceDataPercent.value : referenceDataConc.value;
+                });
+
+                // Computed
+                const parameterList = computed(() => {
+                    return Object.keys(defaults.value.parameters || {}).sort();
+                });
+
+                const stateList = computed(() => {
+                    return Object.keys(defaults.value.states || {}).sort();
+                });
+
+                const filteredParameters = computed(() => {
+                    let params = parameterList.value;
+                    if (parameterSearch.value) {
+                        const search = parameterSearch.value.toLowerCase();
+                        params = params.filter(p => p.toLowerCase().includes(search));
+                    }
+                    return params;
+                });
+
+                const currentParameterValue = computed({
+                    get() {
+                        const cond = isCondition2.value ? condition2 : condition1;
+                        return cond.parameters[selectedParameter.value] ?? 0;
+                    },
+                    set(val) {
+                        const cond = isCondition2.value ? condition2 : condition1;
+                        cond.parameters[selectedParameter.value] = val;
+                    }
+                });
+
+                const currentStateValue = computed({
+                    get() {
+                        const cond = isCondition2.value ? condition2 : condition1;
+                        return cond.states[selectedState.value] ?? 0;
+                    },
+                    set(val) {
+                        const cond = isCondition2.value ? condition2 : condition1;
+                        cond.states[selectedState.value] = val;
+                    }
+                });
+
+                // Methods
+                const formatNumber = (num) => {
+                    if (num === undefined || num === null) return '';
+                    return Number(num).toPrecision(4);
+                };
+
+                const loadDefaults = async () => {
+                    try {
+                        const response = await fetch('/api/defaults');
+                        defaults.value = await response.json();
+
+                        // Only initialize conditions with defaults if not loaded from localStorage
+                        if (Object.keys(condition1.parameters).length === 0) {
+                            Object.assign(condition1.parameters, defaults.value.parameters);
+                            Object.assign(condition1.states, defaults.value.states);
+                        }
+                        if (Object.keys(condition2.parameters).length === 0) {
+                            Object.assign(condition2.parameters, defaults.value.parameters);
+                            Object.assign(condition2.states, defaults.value.states);
+                        }
+
+                        // Set initial selections
+                        if (parameterList.value.length > 0) {
+                            selectedParameter.value = parameterList.value[0];
+                        }
+                        if (stateList.value.length > 0) {
+                            selectedState.value = stateList.value[0];
+                        }
+
+                        await runSimulation();
+                    } catch (error) {
+                        console.error('Error loading defaults:', error);
+                    }
+                };
+
+                const runSimulation = async () => {
+                    if (selectedStates.value.length === 0) return;
+
+                    isLoading.value = true;
+                    try {
+                        const response = await fetch('/api/simulate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                condition1: {
+                                    parameters: condition1.parameters,
+                                    states: condition1.states
+                                },
+                                condition2: {
+                                    parameters: condition2.parameters,
+                                    states: condition2.states
+                                },
+                                simLength: simLength.value,
+                                selectedStates: selectedStates.value,
+                                percentageChange: percentageChange.value
+                            })
+                        });
+
+                        const data = await response.json();
+                        results.condition1 = data.condition1;
+                        results.condition2 = data.condition2;
+
+                        await nextTick();
+                        updatePlots();
+                    } catch (error) {
+                        console.error('Error running simulation:', error);
+                    } finally {
+                        isLoading.value = false;
+                    }
+                };
+
+                const updatePlots = () => {
+                    if (!results.condition1 || !results.condition2) return;
+
+                    const yAxisTitle = percentageChange.value ? 'Change [%]' : 'Concentration [mM]';
+                    const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+
+                    // Time series plot 1
+                    const traces1 = selectedStates.value.map((state, i) => ({
+                        x: results.condition1.time,
+                        y: results.condition1.states[state],
+                        type: 'scatter',
+                        mode: 'lines',
+                        name: state,
+                        line: { color: colors[i % colors.length], width: 2 }
+                    }));
+
+                    // Add reference points to condition 1 plot (using mode-appropriate data)
+                    if (showReferenceData.value) {
+                        activeReferenceData.value.forEach(ref => {
+                            if (ref.state && ref.mean !== undefined && ref.time !== undefined) {
+                                traces1.push({
+                                    x: [ref.time],
+                                    y: [ref.mean],
+                                    error_y: ref.error ? { type: 'data', array: [ref.error], visible: true } : undefined,
+                                    type: 'scatter',
+                                    mode: 'markers',
+                                    name: `${ref.state} (ref)`,
+                                    marker: { color: 'black', size: 10, symbol: 'circle' },
+                                    showlegend: false
+                                });
+                            }
+                        });
+                    }
+
+                    const layout1 = {
+                        xaxis: { title: 'Time [min]' },
+                        yaxis: { title: yAxisTitle },
+                        margin: { t: 10, r: 30, b: 40, l: 60 },
+                        legend: { orientation: 'h', y: 1.1 },
+                        showlegend: true
+                    };
+
+                    Plotly.react('plot1', traces1, layout1, { responsive: true });
+
+                    // Time series plot 2
+                    const traces2 = selectedStates.value.map((state, i) => ({
+                        x: results.condition2.time,
+                        y: results.condition2.states[state],
+                        type: 'scatter',
+                        mode: 'lines',
+                        name: state,
+                        line: { color: colors[i % colors.length], width: 2 }
+                    }));
+
+                    // Add reference points to condition 2 plot (using mode-appropriate data)
+                    if (showReferenceData.value) {
+                        activeReferenceData.value.forEach(ref => {
+                            if (ref.state && ref.mean !== undefined && ref.time !== undefined) {
+                                traces2.push({
+                                    x: [ref.time],
+                                    y: [ref.mean],
+                                    error_y: ref.error ? { type: 'data', array: [ref.error], visible: true } : undefined,
+                                    type: 'scatter',
+                                    mode: 'markers',
+                                    name: `${ref.state} (ref)`,
+                                    marker: { color: 'black', size: 10, symbol: 'circle' },
+                                    showlegend: false
+                                });
+                            }
+                        });
+                    }
+
+                    const layout2 = {
+                        xaxis: { title: 'Time [min]' },
+                        yaxis: { title: yAxisTitle },
+                        margin: { t: 10, r: 30, b: 40, l: 60 },
+                        showlegend: false
+                    };
+
+                    Plotly.react('plot2', traces2, layout2, { responsive: true });
+
+                    // Bar chart for endpoints
+                    const endValues1 = selectedStates.value.map(state => {
+                        const vals = results.condition1.states[state];
+                        return vals[vals.length - 1];
+                    });
+                    const endValues2 = selectedStates.value.map(state => {
+                        const vals = results.condition2.states[state];
+                        return vals[vals.length - 1];
+                    });
+
+                    const barTraces = [
+                        {
+                            x: selectedStates.value,
+                            y: endValues1,
+                            type: 'bar',
+                            name: conditionNames.condition1,
+                            marker: { color: 'skyblue' }
+                        },
+                        {
+                            x: selectedStates.value,
+                            y: endValues2,
+                            type: 'bar',
+                            name: conditionNames.condition2,
+                            marker: { color: 'indigo' }
+                        }
+                    ];
+
+                    const barLayout = {
+                        barmode: 'group',
+                        xaxis: { title: 'State' },
+                        yaxis: { title: yAxisTitle },
+                        margin: { t: 30, r: 30, b: 60, l: 60 },
+                        legend: { orientation: 'h', y: 1.1 }
+                    };
+
+                    Plotly.react('barPlot', barTraces, barLayout, { responsive: true });
+                };
+
+                const selectParameter = (param) => {
+                    selectedParameter.value = param;
+                };
+
+                const selectState = (state) => {
+                    selectedState.value = state;
+                };
+
+                const updateParameter = () => {
+                    debouncedSimulation();
+                };
+
+                const updateState = () => {
+                    debouncedSimulation();
+                };
+
+                const onConditionToggle = () => {
+                    // Update displayed values when switching conditions
+                };
+
+                const toggleState = (state) => {
+                    const index = selectedStates.value.indexOf(state);
+                    if (index === -1) {
+                        selectedStates.value.push(state);
+                    } else {
+                        selectedStates.value.splice(index, 1);
+                    }
+                    runSimulation();
+                };
+
+                const resetSettings = () => {
+                    // Clear and reset to defaults
+                    Object.keys(condition1.parameters).forEach(k => delete condition1.parameters[k]);
+                    Object.keys(condition1.states).forEach(k => delete condition1.states[k]);
+                    Object.keys(condition2.parameters).forEach(k => delete condition2.parameters[k]);
+                    Object.keys(condition2.states).forEach(k => delete condition2.states[k]);
+
+                    Object.assign(condition1.parameters, defaults.value.parameters);
+                    Object.assign(condition1.states, defaults.value.states);
+                    Object.assign(condition2.parameters, defaults.value.parameters);
+                    Object.assign(condition2.states, defaults.value.states);
+
+                    // Reset condition names
+                    conditionNames.condition1 = 'Condition 1';
+                    conditionNames.condition2 = 'Condition 2';
+
+                    runSimulation();
+                };
+
+                const loadExample = async (exampleId) => {
+                    try {
+                        const response = await fetch(`/api/example/${exampleId}`);
+                        const example = await response.json();
+
+                        // Reset to defaults first
+                        Object.assign(condition1.parameters, defaults.value.parameters);
+                        Object.assign(condition1.states, defaults.value.states);
+                        Object.assign(condition2.parameters, defaults.value.parameters);
+                        Object.assign(condition2.states, defaults.value.states);
+
+                        // Apply example overrides
+                        if (example.condition1?.parameters) {
+                            Object.assign(condition1.parameters, example.condition1.parameters);
+                        }
+                        if (example.condition1?.states) {
+                            Object.assign(condition1.states, example.condition1.states);
+                        }
+                        if (example.condition2?.parameters) {
+                            Object.assign(condition2.parameters, example.condition2.parameters);
+                        }
+                        if (example.condition2?.states) {
+                            Object.assign(condition2.states, example.condition2.states);
+                        }
+
+                        if (example.selectedStates) {
+                            selectedStates.value = example.selectedStates;
+                        }
+                        if (example.simLength) {
+                            simLength.value = example.simLength;
+                        }
+                        if (example.conditionNames) {
+                            conditionNames.condition1 = example.conditionNames.condition1;
+                            conditionNames.condition2 = example.conditionNames.condition2;
+                        }
+                        if (example.percentageChange !== undefined) {
+                            percentageChange.value = example.percentageChange;
+                        }
+
+                        // Handle separate reference data for each mode
+                        if (example.referenceDataPercent) {
+                            referenceDataPercent.value = example.referenceDataPercent;
+                            showReferenceData.value = true;
+                        } else {
+                            referenceDataPercent.value = [];
+                        }
+                        if (example.referenceDataConc) {
+                            referenceDataConc.value = example.referenceDataConc;
+                            showReferenceData.value = true;
+                        } else {
+                            referenceDataConc.value = [];
+                        }
+                        // If no reference data at all, hide the section
+                        if (!example.referenceDataPercent && !example.referenceDataConc) {
+                            showReferenceData.value = false;
+                        }
+
+                        await runSimulation();
+                    } catch (error) {
+                        console.error('Error loading example:', error);
+                    }
+                };
+
+                const downloadResults = async () => {
+                    try {
+                        const response = await fetch('/api/export', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                parameters: Object.fromEntries(
+                                    parameterList.value.map(p => [p, {
+                                        condition1: condition1.parameters[p],
+                                        condition2: condition2.parameters[p],
+                                        unit: defaults.value.parameterUnits?.[p] || '',
+                                        description: defaults.value.parameterDescriptions?.[p] || ''
+                                    }])
+                                ),
+                                condition1Data: results.condition1,
+                                condition2Data: results.condition2
+                            })
+                        });
+
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'nt_cycling_results.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    } catch (error) {
+                        console.error('Error downloading results:', error);
+                    }
+                };
+
+                const addReference = () => {
+                    if (percentageChange.value) {
+                        referenceDataPercent.value.push({ state: '', mean: null, error: null, time: null });
+                    } else {
+                        referenceDataConc.value.push({ state: '', mean: null, error: null, time: null });
+                    }
+                };
+
+                const removeReference = (index) => {
+                    if (percentageChange.value) {
+                        referenceDataPercent.value.splice(index, 1);
+                    } else {
+                        referenceDataConc.value.splice(index, 1);
+                    }
+                };
+
+                // Debounced simulation
+                let debounceTimer = null;
+                const debouncedSimulation = () => {
+                    if (debounceTimer) clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(runSimulation, 300);
+                };
+
+                // Watch for reference data changes (both arrays)
+                watch(referenceDataPercent, () => {
+                    if (showReferenceData.value && percentageChange.value) {
+                        updatePlots();
+                    }
+                }, { deep: true });
+
+                watch(referenceDataConc, () => {
+                    if (showReferenceData.value && !percentageChange.value) {
+                        updatePlots();
+                    }
+                }, { deep: true });
+
+                watch(showReferenceData, () => {
+                    updatePlots();
+                });
+
+                // Persist condition names to localStorage
+                watch(conditionNames, (newNames) => {
+                    localStorage.setItem('conditionNames', JSON.stringify(newNames));
+                }, { deep: true });
+
+                // Persist condition1 parameters and states to localStorage
+                watch(condition1, (newCondition) => {
+                    localStorage.setItem('condition1', JSON.stringify(newCondition));
+                }, { deep: true });
+
+                // Persist condition2 parameters and states to localStorage
+                watch(condition2, (newCondition) => {
+                    localStorage.setItem('condition2', JSON.stringify(newCondition));
+                }, { deep: true });
+
+                // Initialize
+                onMounted(() => {
+                    loadDefaults();
+                });
+
+                return {
+                    defaults,
+                    condition1,
+                    condition2,
+                    conditionNames,
+                    isCondition2,
+                    leftTab,
+                    rightTab,
+                    selectedParameter,
+                    selectedState,
+                    parameterSearch,
+                    simLength,
+                    selectedStates,
+                    percentageChange,
+                    isLoading,
+                    results,
+                    showReferenceData,
+                    referenceDataPercent,
+                    referenceDataConc,
+                    activeReferenceData,
+                    parameterList,
+                    stateList,
+                    filteredParameters,
+                    currentParameterValue,
+                    currentStateValue,
+                    formatNumber,
+                    selectParameter,
+                    selectState,
+                    updateParameter,
+                    updateState,
+                    onConditionToggle,
+                    toggleState,
+                    resetSettings,
+                    loadExample,
+                    downloadResults,
+                    addReference,
+                    removeReference,
+                    runSimulation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

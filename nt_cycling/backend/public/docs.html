@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Neurotransmitter Cycling Model</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .doc-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .doc-content p {
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+        .doc-content strong {
+            color: #1a1a2e;
+        }
+        .reference-item {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+        }
+        .legend-term {
+            font-weight: 600;
+            color: #1769ec;
+        }
+        .model-image {
+            max-width: 100%;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .equation-image {
+            width: 900px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="/images/Neuroblox-Light.png" alt="Neuroblox" style="height: 40px;">
+                        <h1>Documentation</h1>
+                    </div>
+                    <a href="/" class="btn btn-outline-light btn-sm">Back to Simulation</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <div class="container py-4">
+            <div class="card">
+                <div class="card-header p-0">
+                    <ul class="nav nav-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{ active: activeTab === 'model' }"
+                               href="#" @click.prevent="activeTab = 'model'">MODEL</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{ active: activeTab === 'description' }"
+                               href="#" @click.prevent="activeTab = 'description'">DESCRIPTION</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{ active: activeTab === 'howto' }"
+                               href="#" @click.prevent="activeTab = 'howto'">HOW TO USE</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{ active: activeTab === 'legend' }"
+                               href="#" @click.prevent="activeTab = 'legend'">LEGEND</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body doc-content">
+                    <!-- Model Tab -->
+                    <div v-show="activeTab === 'model'" class="text-center">
+                        <h4 class="mb-4">Neurotransmitter Cycling Model Diagram</h4>
+                        <img src="/images/model_scheme.png" alt="Model Scheme" class="model-image">
+                        <p class="text-muted mt-3">
+                            The diagram shows the reaction network including transport, utilization, and cycling of
+                            neurotransmitters between excitatory neurons, inhibitory neurons, and astrocytes.
+                        </p>
+                        <img src="/images/equations.png" alt="equations" class="equation-image">
+
+                    </div>
+
+                    <!-- Description Tab -->
+                    <div v-show="activeTab === 'description'">
+                        <h4 class="mb-4">What is this model for?</h4>
+                        <p>
+                            This model simulates brain neurotransmitter levels in the brain,
+                            focusing on glutamate and gamma-aminobutyric acid (GABA).
+                            Use this tool to test how specific conditions or interventions affect metabolic
+                            and vesicular Glu/GABA levels.
+                        </p>
+
+                        <h4 class="mb-3 mt-4">Mechanism</h4>
+                        <p>
+                            MRS and traditional neurochemical studies have demonstrated a linear relationship
+                            between the synthesis rates of the neurotransmitters glutamate and GABA and neuronal
+                            glucose metabolism (Sibson et al. 1998, Rothman et al. 2022).
+                            This relationship is mechanistically grounded in the pseudo malate-aspartate shuttle
+                            model (PMAS) (Rothman et al. 2024). According to this model, glutamate synthesis
+                            from glutamine in neurons is directly coupled to glucose oxidation via the
+                            malate-aspartate shuttle. 
+                        </p>
+                        <p>
+                            Building upon the PMAS, we developed a computational model that simulates how perturbations
+                            in metabolism impact the dynamics of neurotransmitter cycling in the brain.
+                        </p>
+                        <p>
+                            The dynamics of neurotransmitter cycling were simulated using differential equations representing
+                            reactions within a connected system of excitatory neurons, inhibitory neurons, and astrocytes.
+                            Key reaction pathways involved in neurotransmitter cycling were identified via mass balance analysis
+                            (Rothman et al. 2024) and the principle of metabolic control (Fell 1992), while reactions exerting
+                            minimal control over system dynamics were modeled as simple flow-throughs.
+                            Reaction equations were parameterized from literature and enzyme database entries.
+                        </p>
+                        <p>
+                            See the corresponding publication for more details and the underlying equations here: Link to be added.
+                        </p>
+
+
+                        <p>The model code and relevant tutorials are available here: <a href="https://github.com/Neuroblox/MetabolicModuleNTCyclingPaper">GitHub</a>
+
+                        <h4 class="mb-3 mt-4">References</h4>
+                        <div class="reference-item">
+                            <strong>●</strong> Rothman, Douglas L., et al. "In vivo 13C and 1H‐[13C] MRS studies of
+                            neuroenergetics and neurotransmitter cycling, applications to neurological and psychiatric
+                            disease and brain cancer." <em>NMR in Biomedicine</em> 32.10 (2019): e4172.
+                        </div>
+                        <div class="reference-item">
+                            <strong>●</strong> Sibson, Nicola R., et al. "Stoichiometric coupling of brain glucose
+                            metabolism and glutamatergic neuronal activity." <em>Proceedings of the National Academy
+                            of Sciences</em> 95.1 (1998): 316-321.
+                        </div>
+                        <div class="reference-item">
+                            <strong>●</strong> Rothman, Douglas L., Kevin L. Behar, and Gerald A. Dienel. "Mechanistic
+                            stoichiometric relationship between the rates of neurotransmission and neuronal glucose
+                            oxidation: Reevaluation of and alternatives to the pseudo‐malate‐aspartate shuttle model."
+                            <em>Journal of Neurochemistry</em> 168.5 (2024): 555-591.
+                        </div>
+                        <div class="reference-item">
+                            <strong>●</strong> Fell, David A. "Metabolic control analysis: a survey of its theoretical
+                            and experimental development." <em>Biochemical Journal</em> 286.Pt 2 (1992): 313.
+                        </div>
+                    </div>
+
+                    <!-- How To Use Tab -->
+                    <div v-show="activeTab === 'howto'">
+                        <h4 class="mb-4">How to Use This Tool</h4>
+
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <strong>●</strong> The <strong>Model</strong> tab displays the reactions and their
+                                reactants, with the equations for the reaction rates shown below.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> Adjust reaction parameters to test your hypotheses by selecting
+                                parameters from the dropdown menu in the <strong>Parameters</strong> tab and entering
+                                their values. You can simultaneously modify as many parameters as you wish.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> You can simulate two conditions (<strong>Condition 1</strong> and
+                                <strong>Condition 2</strong>) simultaneously to facilitate easy comparison between a
+                                test and a reference condition. You can modify the parameters of either condition by
+                                selecting it using the toggle switch.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> Under the <strong>Initial Conditions</strong> tab, you can modify
+                                the starting concentrations of your simulations.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> The model will automatically simulate using the updated values.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> To restore default parameters, click the <strong>Reset Settings</strong> button.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> To display all adjustable parameters, click the <strong>Full Model</strong> button.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> Define your own simulation length. Use this option to ensure the
+                                simulation runs long enough to reach a new steady state.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> There are two options for displaying the results. <strong>Dynamics</strong>
+                                shows the time series for the full simulation, while <strong>End-points</strong> displays
+                                only the final concentrations as bar plots.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> Select the variables you want to plot, and the graphs will update accordingly.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> Enable <strong>Percentage Change</strong> to visualize relative changes
+                                compared to initial values instead of absolute concentrations.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> To download a plot, hover over it with your cursor to access the
+                                <strong>Download plot as a PNG</strong> option.
+                            </li>
+                            <li class="mb-3">
+                                <strong>●</strong> To download the simulation results as an Excel file, click the
+                                <strong>Download Results</strong> button within the <strong>Dynamics</strong> tab.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Legend Tab -->
+                    <div v-show="activeTab === 'legend'">
+                        <h4 class="mb-4">Abbreviations & Legend</h4>
+
+                        <h5 class="mt-4 mb-3">Metabolites</h5>
+                        <p><span class="legend-term">GLC:</span> glucose</p>
+                        <p><span class="legend-term">KET:</span> ketone (beta-hydroxybutyrate)</p>
+                        <p><span class="legend-term">GLN:</span> glutamine</p>
+                        <p><span class="legend-term">GLU:</span> glutamate</p>
+                        <p><span class="legend-term">GABA:</span> gamma-aminobutyric acid</p>
+                        <p><span class="legend-term">ATP:</span> adenosine triphosphate</p>
+
+                        <h5 class="mt-4 mb-3">Kinetic Parameters</h5>
+                        <p><span class="legend-term">Vmax:</span> maximum reaction rate</p>
+                        <p><span class="legend-term">Tmax:</span> maximum transport rate</p>
+                        <p><span class="legend-term">Km:</span> Michaelis-Menten constant</p>
+                        <p><span class="legend-term">KI:</span> Michaelis-Menten constant for inhibition</p>
+                        <p><span class="legend-term">KT:</span> Michaelis-Menten constant for transport</p>
+                        <p><span class="legend-term">CMR:</span> cerebral metabolic rate</p>
+
+                        <h5 class="mt-4 mb-3">Enzymes & Processes</h5>
+                        <p><span class="legend-term">PMAS:</span> pseudo malate aspartate shuttle</p>
+                        <p><span class="legend-term">PAG:</span> phosphate-activated glutaminase</p>
+                        <p><span class="legend-term">GS:</span> glutamine synthetase</p>
+                        <p><span class="legend-term">GDH:</span> glutamate dehydrogenase</p>
+                        <p><span class="legend-term">GT:</span> GABA transaminase</p>
+                        <p><span class="legend-term">GAD:</span> glutamate decarboxylase</p>
+                        <p><span class="legend-term">anapl:</span> anaplerosis</p>
+
+                        <h5 class="mt-4 mb-3">Sub- and Superscript Notation</h5>
+                        <p><span class="legend-term">_e:</span> excitatory neuronal</p>
+                        <p><span class="legend-term">_i:</span> inhibitory neuronal</p>
+                        <p><span class="legend-term">_a:</span> astrocytic</p>
+                        <p><span class="legend-term">_v:</span> vesicular</p>
+                        <p><span class="legend-term">_c:</span> cytosolic</p>
+                        <p><span class="legend-term">_b:</span> brain</p>
+                        <p><span class="legend-term">_p:</span> plasma</p>
+                        <p><span class="legend-term">_syn:</span> synaptic</p>
+                        <p><span class="legend-term">_trans:</span> transport</p>
+                        <p><span class="legend-term">_out:</span> efflux</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-muted py-3">
+            <small>
+                This model is part of Neuroblox. Visit at
+                <a href="https://www.neuroblox.ai" target="_blank">www.neuroblox.ai</a>.
+                Contact: info@neuroblox.ai
+            </small>
+        </footer>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                const activeTab = ref('model');
+
+                return {
+                    activeTab
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
