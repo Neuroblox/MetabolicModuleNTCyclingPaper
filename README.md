@@ -8,12 +8,12 @@ This model is part of the Neuroblox computational neuroscience platform [(https:
 
 ## Corresponding publication
 
-*Computational modeling of neurotransmitter cycling predicts human brain glutamate and GABA dynamics in response to administration of exogenous ketones* ([link to preprint](https://www.biorxiv.org/content/10.64898/2026.02.11.700015))
+[Link to preprint](https://www.biorxiv.org/content/10.64898/2026.02.11.700015): *Computational modeling of neurotransmitter cycling predicts human brain glutamate and GABA dynamics in response to administration of exogenous ketones*
 
 ## Repository structure
 
 - `GUI/`  
-  Code for a web application that runs the model. A live version can be accessed here: https://nt-cycling.fly.dev/.
+  Code for a web application that runs the model. A live version can be accessed here: [link to GUI](https://nt-cycling.fly.dev/).
 
 - `reproduce_paper/`  
   Code to reproduce the results reported in the corresponding publication.  
