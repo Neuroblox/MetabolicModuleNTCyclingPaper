@@ -8,9 +8,7 @@ This model is part of the Neuroblox computational neuroscience platform [(https:
 
 ## Corresponding publication
 
-*Computational modeling of neurotransmitter cycling predicts human brain glutamate and GABA dynamics in response to administration of exogenous ketones*  
-
-(link to be added)
+*Computational modeling of neurotransmitter cycling predicts human brain glutamate and GABA dynamics in response to administration of exogenous ketones* ([link to preprint](https://www.biorxiv.org/content/10.64898/2026.02.11.700015))
 
 ## Repository structure
 
