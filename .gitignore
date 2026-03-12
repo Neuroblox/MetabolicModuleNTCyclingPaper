@@ -29,3 +29,13 @@ JuliaLocalPreferences.toml
 
 # icloud/finder specific files on macOS.
 *.DS_Store
+
+# Electron app
+GUI/electron/node_modules/
+GUI/electron/dist/
+
+# Julia compiled app output (large binary, built locally)
+GUI/backend/julia-app/
+
+# Julia build environment manifest (resolved locally)
+GUI/backend/build/Manifest.toml

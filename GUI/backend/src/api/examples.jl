@@ -1,4 +1,4 @@
-# GET /api/examples - List available examples
+# GET /api/examples  - List available examples
 # GET /api/example/:id - Get specific example configuration
 
 const EXAMPLES = Dict(
@@ -50,7 +50,7 @@ const EXAMPLES = Dict(
     )
 )
 
-@get "/api/examples" function(req::HTTP.Request)
+function _handle_examples(req::HTTP.Request)
     examples_list = [
         Dict(
             "id" => id,
@@ -62,10 +62,15 @@ const EXAMPLES = Dict(
     return JSON3.write(examples_list)
 end
 
-@get "/api/example/{id}" function(req::HTTP.Request, id::String)
+function _handle_example_by_id(req::HTTP.Request, id::String)
     if haskey(EXAMPLES, id)
         return JSON3.write(EXAMPLES[id])
     else
         return HTTP.Response(404, JSON3.write(Dict("error" => "Example not found")))
     end
+end
+
+function register_examples_routes!()
+    @get "/api/examples" _handle_examples
+    @get "/api/example/{id}" _handle_example_by_id
 end

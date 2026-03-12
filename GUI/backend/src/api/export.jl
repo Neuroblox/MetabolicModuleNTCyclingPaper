@@ -1,9 +1,6 @@
 # POST /api/export - Generate XLSX file
 
-using XLSX
-using DataFrames
-
-@post "/api/export" function(req::HTTP.Request)
+function _handle_export(req::HTTP.Request)
     body = JSON3.read(String(req.body))
 
     # Create a temporary file for the XLSX
@@ -96,4 +93,8 @@ using DataFrames
         "Content-Disposition" => "attachment; filename=\"nt_cycling_results.xlsx\""
     ]
     return HTTP.Response(200, headers, xlsx_data)
+end
+
+function register_export_routes!()
+    @post "/api/export" _handle_export
 end

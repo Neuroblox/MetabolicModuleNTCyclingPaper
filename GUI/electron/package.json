@@ -1,0 +1,49 @@
+{
+  "name": "nt-cycling",
+  "version": "1.0.0",
+  "description": "NT Cycling Model – Neurotransmitter Cycling Simulator",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "org.neuroblox.nt-cycling",
+    "productName": "NT Cycling Model",
+    "copyright": "Copyright © 2024 Neuroblox",
+    "directories": {
+      "output": "dist"
+    },
+    "extraResources": [
+      {
+        "from": "../backend/julia-app",
+        "to": "julia-app",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../backend/public",
+        "to": "public"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.medical",
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ]
+    },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }]
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }]
+    }
+  }
+}
