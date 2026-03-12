@@ -20,3 +20,43 @@ This model is part of the Neuroblox computational neuroscience platform [(https:
 
 - `tutorial/`  
   A general tutorial demonstrating how to use the neurotransmitter cycling model for custom analyses and exploratory purposes.
+
+## Running the Electron App
+
+The app can be run in dev mode or compiled into a distributable binary.
+
+### Dev mode
+
+```bash
+# Install Julia dependencies (first time only)
+julia --project=GUI/backend -e 'using Pkg; Pkg.instantiate()'
+
+# Install Node dependencies (first time only)
+cd GUI/electron && npm install
+
+# Launch
+npm start
+```
+
+Electron spawns the Julia server automatically using your system `julia`. The app polls `http://127.0.0.1:8090/` and loads once Julia is ready — first launch takes a moment due to precompilation.
+
+### Production build
+
+Produces a distributable `.dmg` / `.exe` / `AppImage` with a self-contained Julia binary.
+
+```bash
+# Install build-env dependencies (first time only)
+julia --project=GUI/backend/build -e 'using Pkg; Pkg.instantiate()'
+
+# Compile the Julia app (~10–20 min)
+julia --project=GUI/backend/build GUI/backend/build.jl
+# Output: GUI/backend/julia-app/
+
+# Install Node dependencies (first time only)
+cd GUI/electron && npm install
+
+# Package the Electron app
+npm run build           # current platform
+# or: npm run build:mac / build:win / build:linux
+# Output: GUI/electron/dist/
+```

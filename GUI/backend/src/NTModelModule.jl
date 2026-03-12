@@ -2,9 +2,8 @@ module NTModelModule
 
 using Catalyst
 using OrdinaryDiffEqTsit5
-using DataFrames
 
-export NTModel, simulate, get_timeseries, get_defaults, extract_results
+export NTModel, simulate, get_defaults, extract_results
 export unknowns
 
 mutable struct NTModel
@@ -262,24 +261,24 @@ function extract_results(sol, selected_states::Vector{String}, percentage_change
     )
 end
 
-"""
-    get_timeseries(sol; selected_states=["GLN_e(t)"], percentage_change=false)
-
-Returns time series as DataFrame for selected states.
-"""
-function get_timeseries(sol; selected_states=["GLN_e(t)"], percentage_change=false)
-    timeseries = []
-    for state in selected_states
-        state_symbol = Symbol(replace(state, "(t)" => ""))
-        if percentage_change
-            push!(timeseries, round.(100 .* sol[state_symbol]./(sol[state_symbol][1]) .- 100, digits=1))
-        else
-            push!(timeseries, sol[state_symbol])
-        end
-    end
-
-    df = DataFrame([sol.t, timeseries...], Symbol.(["time", selected_states...]))
-    return df
-end
+#"""
+#    get_timeseries(sol; selected_states=["GLN_e(t)"], percentage_change=false)
+#
+#Returns time series as DataFrame for selected states.
+#"""
+#function get_timeseries(sol; selected_states=["GLN_e(t)"], percentage_change=false)
+#    timeseries = []
+#    for state in selected_states
+#        state_symbol = Symbol(replace(state, "(t)" => ""))
+#        if percentage_change
+#            push!(timeseries, round.(100 .* sol[state_symbol]./(sol[state_symbol][1]) .- 100, digits=1))
+#        else
+#            push!(timeseries, sol[state_symbol])
+#        end
+#    end
+#
+#    df = DataFrame([sol.t, timeseries...], Symbol.(["time", selected_states...]))
+#    return df
+#end
 
 end

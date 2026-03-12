@@ -1,6 +1,6 @@
 # POST /api/simulate - Run simulation for both conditions
 
-@post "/api/simulate" function(req::HTTP.Request)
+function _handle_simulate(req::HTTP.Request)
     body = JSON3.read(String(req.body))
 
     # Create models for each condition
@@ -58,4 +58,8 @@
         "condition1" => results1,
         "condition2" => results2
     ))
+end
+
+function register_simulation_routes!()
+    @post "/api/simulate" _handle_simulate
 end
