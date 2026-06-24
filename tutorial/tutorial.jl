@@ -15,19 +15,25 @@
 #md # these neurotransmitters change over time, and what the new steady-state concentrations are.
 
 # ## 2. Key concepts of Glutamate and GABA cycling
-#md # Glutamate and GABA are the primary excitatory and inhibitory neurotransmitters in the brain,
-#md # synthesized de novo in neurons, with GABA synthesis being specific to GABAergic neurons.
-#md # Due to the high energetic cost of neurotransmission, approximately 80% of released glutamate
-#md # and GABA is recycled by astrocytes via glutamine. This model incorporates the essential steps of
-#md # glutamate and GABA cycling, using Michaelis–Menten kinetics, to simulate the cycling rate
-#md # and the resultant concentrations.
-
-#md # Another key aspect of neurotransmitter cycling is its coupling to glucose oxidation,
-#md # a phenomenon widely observed in experiments.
-#md # Recent studies suggest that this coupling links glucose oxidation to the conversion
-#md # of glutamine to glutamate in neurons.
-#md # This process has been described as the pseudo–malate–aspartate shuttle (PMAS).
-#md # In this model, PMAS exerts strong flux control over the cycling rate.
+#md # Glutamate and GABA are the primary excitatory and inhibitory neurotransmitters in the brain.
+#md # Both are synthesized de novo in neurons, with GABA synthesis being specific to
+#md # GABAergic neurons.
+#md #
+#md # Following synaptic release during neurotransmission, approximately 80% of released
+#md # glutamate and GABA is taken up by astrocytes and converted to glutamine, which is
+#md # subsequently transported back to neurons and converted to glutamate and GABA.
+#md # The recycling process is closely coupled to neuronal energy metabolism, helping
+#md # maintain a balance between neuronal signaling and its energetic demands across
+#md # varying levels of activity. One proposed coupling mechanism is the
+#md # pseudo-malate-aspartate shuttle (PMAS).
+#md #
+#md # The current model incorporates the key enzymatic reactions involved in
+#md # neurotransmitter cycling in neurons and astrocytes and couples them to neuronal
+#md # glucose metabolism via the PMAS. It integrates algebraic expressions and
+#md # differential equations into a unified framework, with parameters derived primarily
+#md # from in vivo studies. In addition, the model includes equations describing ketone
+#md # pharmacokinetics in the brain, enabling the simulation of ketosis and its effects
+#md # on neurotransmitter cycling.
 
 
 #md # ![](figures/fig_model.png)
@@ -55,7 +61,7 @@ prob = ODEProblem(ntmodel.model, ntmodel.u0, (0.0, 100.0), ntmodel.ps);
 sol = solve(prob, Tsit5());
 
 # Then plot the results:
-fig = Figure(resolution=(400, 300))
+fig = Figure(size=(400, 300))
 ax = Axis(fig[1, 1])
 for state in [:GLU_e, :GABA_i, :GLN_a]
     lines!(ax, sol.t, sol[state], linewidth=2, label=string(state))
@@ -80,7 +86,7 @@ prob = ODEProblem(ntmodel.model, ntmodel.u0, (0.0, 300.0), ntmodel.ps);
 sol = solve(prob, Tsit5());
 
 #md # And then, we'll check how the system responds to the change in initial conditions:
-fig = Figure(resolution=(400, 300))
+fig = Figure(size=(400, 300))
 ax = Axis(fig[1, 1])
 for state in [:GLU_e, :GABA_i, :GLN_a]
     lines!(ax, sol.t, sol[state], linewidth=2, label=string(state))
@@ -114,7 +120,7 @@ prob = ODEProblem(ntmodel.model, ntmodel.u0, (0.0, 300.0), ntmodel.ps);
 sol = solve(prob, Tsit5());
 
 # Plot the results:
-fig = Figure(resolution=(400, 300))
+fig = Figure(size=(400, 300))
 ax = Axis(fig[1, 1])
 for state in [:GLU_e, :GABA_i, :GLN_a]
     lines!(ax, sol.t, sol[state], linewidth=2, label=string(state))
@@ -129,11 +135,18 @@ display(fig)
 #md # We can see that in this case, the system returns to a new steady state after the perturbation.
 
 # ### Example 2: Effect of GABA-T inhibition
-#md # In this example, we will simulate the effect of GABA-T inhibition.
-#md # GABA-T is an enzyme that catalyzes the conversion of GABA to Glutamate in GABAergic neurons.
-#md # We will simulate the effects of pharmacological inhibition of GABA-T by reducing the Vmax parameter
-#md # of this enzyme. The corresponding parameter is labeled as Vmax_GT in the model. In this scenario, we
-#md # will simulate for longer due to slower dynamics.
+#md # In this example, we will simulate the effect of ketosis on neurotransmitter cycling.
+#md # Ketosis is a metabolic state characterized by elevated levels of ketone bodies in the
+#md # blood.
+#md # Ketone bodies are transported from the blood into the brain, where they can serve as
+#md # an alternative energy substrate alongside glucose, thereby altering neuronal
+#md # metabolism. This may consequently affect neurotransmitter cycling, as it is tightly
+#md # coupled to cellular energy metabolism.
+#md # Here, we use the model to predict how ketosis affects neuronal metabolism and
+#md # neurotransmitter cycling.
+#md # The model parameter corresponding to plasma ketone concentration is KetP.
+#md # To simulate ketosis, we will set the initial ketone concentration to 3 mM
+#md # (originally 0 mM) and run the simulation.
 
 # Start with a fresh instance of the NTModel:
 ntmodel = NTModel();
@@ -147,7 +160,7 @@ sol = solve(prob, Tsit5());
 
 #md # We will plot GABA_i only as the Glutamate/Glutamine concentrations are
 #md # not expected to change significantly:
-fig = Figure(resolution=(400, 300))
+fig = Figure(size=(400, 300))
 ax = Axis(fig[1, 1])
 lines!(ax, sol.t, sol[:GABA_i], linewidth=2, label="GABA_i")
 axislegend(ax, position=:rb)
