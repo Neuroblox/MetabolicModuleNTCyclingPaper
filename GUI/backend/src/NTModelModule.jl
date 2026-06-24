@@ -1,7 +1,7 @@
 module NTModelModule
 
 using Catalyst
-using OrdinaryDiffEq
+using OrdinaryDiffEqTsit5
 using DataFrames
 
 export NTModel, simulate, get_timeseries, get_defaults, extract_results
