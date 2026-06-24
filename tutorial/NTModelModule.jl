@@ -27,9 +27,9 @@ mutable struct NTModel
             :GLN_e => 0.28,  # mM
             :GLN_i => 0.07,  # mM
             :GLU_e => 10.0,  # mM
-            :GLU_i => 0.06,  # mM
-            :GABA_i => 0.6,  # mM
-            :GABA_v => 0.06,  # mM
+            :GLU_i => 0.13,  # mM
+            :GABA_i => 0.73,  # mM
+            :GABA_v => 0.1,  # mM
             :GLN_a => 3.8,  # mM
             :GLU_a => 0.8,  # mM
             :KET_b => 0.0,  # mM
@@ -64,23 +64,26 @@ mutable struct NTModel
         ps = Dict([
             # Neurotranstmitter cycling
             :c_vpmas => 1.0,
-            :k_syn_e => 0.01912,
-            :k_syn_i => 0.79882, 
-            :Vmax_GAD67 => 0.20769,
-            :KM_GAD67 => 0.2,
-            :Vmax_GT => 0.05860,
-            :KM_GT => 0.13359,
-            :Vmax_GAD65 => 0.05591,
+            :k_syn_e => 0.0191,
+            :k_syn_i => 0.4793, 
+            :Vmax_GAD67 => 0.0959,
+            :KM_GAD67 => 0.13,
+            :Vmax_GT => 0.0582,
+            :KM_GT => 0.1563,
+            :Vmax_GAD65 => 0.0516,
             :KM_GAD65 => 0.01,
+            :Vmax_GDH => 0.096,
+            :KM_GDH => 0.8,
+            :h_GDH => 4.0,
             :Vmax_GS => 0.753,
             :KM_GS => 0.8,
             :KI_GS => 3.8,
-            :h_GS => 4.0,
-            :Vmax_GDH => 0.0764,
-            :KM_GDH => 0.8,
-            :h_GDH => 4.0,
-            :k_ox => 0.2,
-            :V_out => 0.012,
+            :V_anapl => 0.06,
+            :GLN_p => 0.5,
+            :GLN_ratio => 1/8,
+            :V_out0 => 0.012,
+            :Tmax_gln => 0.018,
+            :KT_gln => 0.25,
 
             # Energy metabolism
             :V_ATP => 11.94,  # mM/min
@@ -106,15 +109,18 @@ mutable struct NTModel
             :KM_GT => "mM",
             :Vmax_GAD65 => "mM/min",
             :KM_GAD65 => "mM",
-            :Vmax_GS => "mM/min",
-            :KM_GS => "mM",
-            :KI_GS => "mM",
-            :h_GS => "-",
             :Vmax_GDH => "mM/min",
             :KM_GDH => "mM",
             :h_GDH => "-",
-            :k_ox => "-",
-            :V_out => "mM/min",
+            :Vmax_GS => "mM/min",
+            :KM_GS => "mM",
+            :KI_GS => "mM",
+            :V_anapl => "mM/min",
+            :GLN_p => "mM",
+            :GLN_ratio => "-",
+            :V_out0 => "mM/min",
+            :Tmax_gln => "mM/min",
+            :KT_gln => "mM",
 
             # Energy metabolism
             :V_ATP => "mM/min",
@@ -127,7 +133,7 @@ mutable struct NTModel
             :ATPket => "-",
             :KET_p => "mM",
             
-        ])
+        ]);
 
         ps_desc = Dict([
             # Neurotranstmitter cycling
@@ -140,15 +146,18 @@ mutable struct NTModel
             :KM_GT => "GT Michaelis-Menten constant for GABA",
             :Vmax_GAD65 => "GAD65 maximum rate",
             :KM_GAD65 => "GAD65 Michaelis-Menten constant for glutamate",
-            :Vmax_GS => "GS maximum rate",
-            :KM_GS => "GS Michaelis-Menten constant for glutamate",
-            :KI_GS => "GS inhibition constant for glutamine",
-            :h_GS => "GS Hill exponent for the inhibition by GLN",
             :Vmax_GDH => "GDH maximum rate",
             :KM_GDH => "GDH Michaelis–Menten constant for glutamate",
             :h_GDH => "GDH Hill exponent",
-            :k_ox => "relative portion of glutamate oxidation",
-            :V_out => "rate of GLN efflux",
+            :Vmax_GS => "GS maximum rate",
+            :KM_GS => "GS Michaelis-Menten constant for glutamate",
+            :KI_GS => "GS inhibition constant for glutamine",
+            :V_anapl => "rate of anaplerotic flux",
+            :GLN_p => "plasma glutamine concentration",
+            :GLN_ratio => "ratio of extracellular vs. intracellular glutamine",
+            :V_out0 => "baseline rate of glutamine efflux",
+            :Tmax_gln => "glutamine transport maximum rate",
+            :KT_gln => "glutamine transport Michaelis-Menten constant",
 
             # Energy metabolism
             :V_ATP => "rate of ATP synthesis",
@@ -160,54 +169,42 @@ mutable struct NTModel
             :k_ket => "Ketone utilization rate constant",
             :ATPket => "ATP yield from ketones",
             :KET_p => "Plasma Ketone concentration",
-        ])
+        ]);
 
         # Model definition
         # -------------
 
         # Custom rate functions
-        mm_reversible(S1P, S1B, Vmax, Km1) = 
-            Vmax / Km1 * (S1P - S1B) / (1 + S1P/Km1 + S1B/Km1);
+        mm_reversible(S1P, S1B, Vmax, Km) = Vmax * (S1P - S1B) / (Km + S1P + S1B);
         CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket) = ((V_ATP - ATPket*KET_b*k_ket)/ATPglc)/0.91
-        Vpmas_e(cmrglc, c_vpmas) = c_vpmas*(cmrglc*0.91*0.75*0.83 - 0.077)/0.812;
-        Vpmas_i(cmrglc, c_vpmas) = c_vpmas*(cmrglc*0.91*0.75*0.17 - 0.011)/0.763;
+        Vpmas_e(cmrglc) = (cmrglc*0.91*0.75*0.83 - 0.077)/0.812;
+        Vpmas_i(cmrglc) = (cmrglc*0.91*0.75*0.17 - 0.011)/0.763;
         
         # Reaction network
         model = @reaction_network begin
             
-            # Ketone transport
+            # Ketone metabolism
             mm_reversible(KET_p, KET_b, Tmax_ket, KT_ket), 0 => KET_b, [description="Ketone transport"]
-
-            # Ketone utilization
             k_ket*KET_b, KET_b => 0, [description="Ketone utilization"]
 
             # Glutamatergic neuron
-            Vpmas_e(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket), c_vpmas), GLN_e => GLU_e, [description="PMAS in e"]
-            k_syn_e * GLU_e, GLU_e => GLU_a, [description="GLU cycling"]
+            Vpmas_e(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket))*c_vpmas, GLN_e => GLU_e, [description="PMAS in e"]
+            k_syn_e * GLU_e, GLU_e => GLU_a, [description="GLU synaptic flux"]
 
             # GABAergic neuron
-            Vpmas_i(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket), c_vpmas), GLN_i => GLU_i, [description="PMAS in i"]
+            Vpmas_i(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket))*c_vpmas, GLN_i => GLU_i, [description="PMAS in i"]
             mm(GLU_i, Vmax_GAD67, KM_GAD67), GLU_i => GABA_i, [description="GAD67"]
             mm(GLU_i, Vmax_GAD65, KM_GAD65), GLU_i => GABA_v, [description="GAD65"]
             mm(GABA_i, Vmax_GT, KM_GT), GABA_i => GLU_i, [description="GT"]
-            # mm(GLU_i, Vmax_GAD65, KM_GAD65), GABA_v => GLU_a, [description="GABA cycling"]
-            k_syn_i * GABA_v, GABA_v => GLU_a, [description="GABA cycling"]
+            k_syn_i * GABA_v, GABA_v => GLU_a, [description="GABA synaptic flux"]
 
             # Astrocyte
-            k_ox * k_syn_e * GLU_e + V_out, 0 => GLU_a, [description="Anaplerosis"]
+            V_anapl, 0 => GLU_a, [description="Anaplerosis"]
             Vmax_GDH * (GLU_a/KM_GDH)^h_GDH / (1 + (GLU_a/KM_GDH)^h_GDH), GLU_a => 0, [description="GDH"]
-            Vmax_GS * GLU_a / (KM_GS*(1 + (GLN_a/KI_GS)^h_GS) + GLU_a), GLU_a => GLN_a, [description="GS"]
-            Vpmas_e(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket), c_vpmas), GLN_a => GLN_e, [description="GLN uptake in e"]
-            Vpmas_i(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket), c_vpmas), GLN_a => GLN_i, [description="GLN uptake in i"]
-            V_out, GLN_a => 0, [description="GLN efflux"]
-
-            # Monitoring
-            CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket), KET_b => KET_b, [description="CMRglc"]
-            CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket)*0.91*0.75, KET_b => KET_b, [description="CMRglc(ox)N"]
-            Vpmas_e(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket), c_vpmas) + 
-            Vpmas_i(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket), c_vpmas),
-                KET_b => KET_b, [description="VPMAS"]
-
+            Vmax_GS * GLU_a / (KM_GS*(1 + GLN_a/KI_GS) + GLU_a), GLU_a => GLN_a, [description="GS"]
+            Vpmas_e(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket))*c_vpmas, GLN_a => GLN_e, [description="GLN uptake in e"]
+            Vpmas_i(CMRglc(V_ATP, KET_b, k_ket, ATPglc, ATPket))*c_vpmas, GLN_a => GLN_i, [description="GLN uptake in i"]
+            V_out0 + mm_reversible(GLN_a*GLN_ratio, GLN_p, Tmax_gln, KT_gln), GLN_a => 0, [description="GLN efflux"]
 
         end;
 
